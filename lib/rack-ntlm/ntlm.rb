@@ -40,10 +40,10 @@ module Rack
 
         if message.type == 3 && env['PATH_INFO'] =~ @config[:uri_pattern]
           user = Net::NTLM::decode_utf16le(message.user)
-          if auth(user)
+          if message.domain.present? && auth(user)
             env['REMOTE_USER'] = user
-          else
-            return [401, {}, ["You are not authorized to see this page"]]
+          elsif @config[:fail_path].present?
+            return [302, {"Location" => env['REQUEST_URI'].sub(env['PATH_INFO'], @config[:fail_path])}, []]
           end
         end
     	end
