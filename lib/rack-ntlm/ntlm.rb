@@ -10,7 +10,7 @@ module Rack
         :uri_pattern => /\//,
         :port => 389,
         :search_filter => "(sAMAccountName=%1)",
-        :auth_mode => "NTLM"
+        :auth_mode => "NTLM",
         :auth_text => "change it by change config[:auth_text]"
       }.merge(config)
     end
