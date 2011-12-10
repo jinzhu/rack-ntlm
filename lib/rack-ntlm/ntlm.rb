@@ -3,6 +3,7 @@ require 'net/ntlm'
 
 module Rack
   class Ntlm
+    @@config = {}
     
     def initialize(app, config = {})
       @app = app
@@ -13,6 +14,8 @@ module Rack
         :auth_mode => "NTLM",
         :auth_text => "change it by change config[:auth_text]"
       }.merge(config)
+
+      @@config = @config
     end
 
     def auth(user)
@@ -22,6 +25,17 @@ module Rack
       ldap.base = @config[:base]
       ldap.auth @config[:auth][:username], @config[:auth][:password] if @config[:auth]
       !ldap.search(:filter => @config[:search_filter].gsub("%1", user)).empty?
+    rescue => e
+      false
+    end
+
+    def self.auth(user, password)
+      ldap = Net::LDAP.new
+      ldap.host = @@config[:host]
+      ldap.port = @@config[:port]
+      ldap.base = @@config[:base]
+      ldap.auth user, password
+      !ldap.search(:filter => @@config[:search_filter].gsub("%1", user)).empty?
     rescue => e
       false
     end
@@ -42,7 +56,7 @@ module Rack
 
         if message.type == 3 && env['PATH_INFO'] =~ @config[:uri_pattern]
           user = Net::NTLM::decode_utf16le(message.user)
-          if message.domain.present? && auth(user)
+          if message.domain.present? #&& auth(user)
             env['REMOTE_USER'] = user
           elsif @config[:fail_path].present?
             return [302, {"Location" => env['REQUEST_URI'].sub(env['PATH_INFO'], @config[:fail_path])}, []]
