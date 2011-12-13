@@ -55,8 +55,10 @@ module Rack
         end
 
         if message.type == 3 && env['PATH_INFO'] =~ @config[:uri_pattern]
-          user = Net::NTLM::decode_utf16le(message.user)
-          if message.domain.present? #&& auth(user)
+          user   = Net::NTLM::decode_utf16le(message.user)
+          domain = Net::NTLM::decode_utf16le(message.domain)
+
+          if domain.present? && @config[:host] =~ /^#{domain}\./i #&& auth(user)
             env['REMOTE_USER'] = user
           elsif @config[:fail_path].present?
             return [302, {"Location" => env['REQUEST_URI'].sub(env['PATH_INFO'], @config[:fail_path])}, []]
