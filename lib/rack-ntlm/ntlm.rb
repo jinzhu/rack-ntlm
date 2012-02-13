@@ -12,6 +12,7 @@ module Rack
         :port => 389,
         :search_filter => "(sAMAccountName=%1)",
         :auth_mode => "NTLM",
+        :check_domain => true,
         :auth_text => "change it by change config[:auth_text]"
       }.merge(config)
 
@@ -58,7 +59,8 @@ module Rack
           user   = Net::NTLM::decode_utf16le(message.user)
           domain = Net::NTLM::decode_utf16le(message.domain)
 
-          if domain.present? && @config[:host] =~ /^#{domain}\./i #&& auth(user)
+          matched_domain = @config[:check_domain] ? (domain.present? && @config[:host] =~ /^#{domain}\./i) : true
+          if matched_domain && user.present?
             env['REMOTE_USER'] = user
           elsif @config[:fail_path].present?
             return [302, {"Location" => env['REQUEST_URI'].sub(env['PATH_INFO'], @config[:fail_path])}, []]
